@@ -252,8 +252,8 @@ checks are meant to minimize the impact of bugs that exist that currently have
 not been fixed in a service.
 
 - This software hasn't been fully tested, and may contain bugs.
-- Some other coures of action may be more appropriate than restarting the service,
-as this may fail if the watchdog doesn't run as root
+- Some other course of action may be more appropriate than restarting the service,
+as this may fail if the watchdog daemon doesn't run as root
 
 <a name="license" />
 
