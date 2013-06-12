@@ -251,9 +251,11 @@ The watchdog isn't a solution to a problem; it doesn't fix bugs. The health
 checks are meant to minimize the impact of bugs that exist that currently have
 not been fixed in a service.
 
-- This software hasn't been fully tested, and may contain bugs.
+- This software hasn't been fully tested, and may contain bugs
 - Some other course of action may be more appropriate than restarting the service,
 as this may fail if the watchdog daemon doesn't run as root
+- Scripts are executed with popen(3C), and as such, have their names parsed by the shell.
+Ensure that you don't name your scripts `$(rm -rf /)` or something
 
 <a name="license" />
 
