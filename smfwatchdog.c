@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 	/* check if we are disabled */
 	char *disabled = getenv("SMFWATCHDOG_DISABLED");
 	if (disabled != NULL && disabled[0] != '\0') {
-		LOG("SMFWATCHDOG_DISABLED is set, exiting");
+		LOG("SMFWATCHDOG_DISABLED is set, exiting\n");
 		return 0;
 	}
 
