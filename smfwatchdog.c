@@ -136,21 +136,16 @@ int main(int argc, char **argv) {
 	sprintf(restartcmd, "svcadm restart %s", FMRI);
 
 	/* drop privileges */
-	if (options.gid) {
-		if (setgid(options.gid) < 0) {
-			LOG("setgid to %d failed: %s\n",
-			    options.gid, strerror(errno));
-			return done(3);
-		}
+	if (options.gid && setgid(options.gid) < 0) {
+		LOG("setgid to %d failed: %s\n",
+		    options.gid, strerror(errno));
+		return done(3);
 	}
-	if (options.uid) {
-		if (setuid(options.uid) < 0) {
-			LOG("setuid to %d failed: %s\n",
-			    options.uid, strerror(errno));
-			return done(4);
-		}
+	if (options.uid && setuid(options.uid) < 0) {
+		LOG("setuid to %d failed: %s\n",
+		    options.uid, strerror(errno));
+		return done(4);
 	}
-
 
 	/* start the loop */
 	int ret = 0;
@@ -189,6 +184,9 @@ int main(int argc, char **argv) {
 	return done(ret);
 }
 
+/**
+ * print "exiting." and return the code you give it
+ */
 int done(int code) {
 	LOG("exiting.\n");
 	return code;
