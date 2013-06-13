@@ -46,10 +46,10 @@
 
 /* Environmental Options */
 struct {
-	int sleep;       /* SMFWATCHDOG_SLEEP
-	                    time to sleep between looping all the checks */
 	int debug;       /* SMFWATCHDOG_DEBUG
 	                    whether debug output is enabled */
+	int sleep;       /* SMFWATCHDOG_SLEEP
+	                    time to sleep between looping all the checks */
 	int action;      /* SMFWATCHDOG_ACTION
 			    the action to take when there is a failure */
 	int uid;         /* SMFWATCHDOG_UID

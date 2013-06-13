@@ -254,19 +254,19 @@ added to the SMF manifest.
     health check scripts, defaults to 60
 - `SMFWATCHDOG_ACTION`: (int) The action (see below) to take during a health
     check failure, defaults to 0 (raise `SIGABRT`)
-- `SMFWATCHDOG_DISABLED`: If set, `smfwatchdog` will exit cleanly upon starting
-- `SMFWATCHDOG_COMMAND`: A command to execute (parsed by a shell) after a failure
-    case but before any action is taken, defaults to nothing
 - `SMFWATCHDOG_UID`: (int) If this is non-zero, `setuid(2)` will be called with
     this variable before any plugins are run to drop privileges
 - `SMFWATCHDOG_GID`: (int) If this is non-zero, `setgid(2)` will be called with
     this variable before any plugins are run to drop privileges
+- `SMFWATCHDOG_COMMAND`: A command to execute (parsed by a shell) after a failure
+    case but before any action is taken, defaults to nothing
 - `SMFWATCHDOG_EMAIL`: If set, this variable will be used as an email address
     to send alerts to when a service has failed a health check
 - `SMFWATCHDOG_EMAIL_FROM`: This is the address from which the above email
     will be sent, defaults to `noreply@<hostname>`
 - `SMFWATCHDOG_MAIL_PROG`: The mail program to use to send email on the system,
     it must accept binary email data over stdin, defaults to `mailx -t`
+- `SMFWATCHDOG_DISABLED`: If set, `smfwatchdog` will exit cleanly upon starting
 - `SMF_FMRI`: This shouldn't be manually set, it will be set automatically by
     SMF, and is used to tell the watchdog which service to monitor
 
