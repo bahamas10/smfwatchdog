@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <libgen.h>
 #include <netdb.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +32,12 @@
 #define MAX_FMRI_LEN       scf_limit(SCF_LIMIT_MAX_FMRI_LENGTH)
 #define WATCHDOG_DIR       "/opt/local/share/smf/smfwatchdog"
 
+/* Action to take on failure, set by SMFWATCHDOG_ACTION */
+#define ACT_RAISE_SIGABRT  0   /* kill ourself with SIGABRT */
+#define ACT_RESTART_SVC    1   /* restart our own service (requires priv) */
+#define ACT_EXIT           2   /* exit with a failure error code */
+#define ACT_NOTHING        3   /* do nothing */
+
 /* LOG() if SMFWATCHDOG_DEBUG is set */
 #define DEBUG(...) \
 	do { \
@@ -43,8 +50,14 @@ struct {
 	                    time to sleep between looping all the checks */
 	int debug;       /* SMFWATCHDOG_DEBUG
 	                    whether debug output is enabled */
+	int action;      /* SMFWATCHDOG_ACTION
+			    the action to take when there is a failure */
+	int uid;         /* SMFWATCHDOG_UID
+			    uid used to drop privileges before looping */
+	int gid;         /* SMFWATCHDOG_GID
+			    gid used to drop privileges before looping */
 	char *mail_to;   /* SMFWATCHDOG_EMAIL
-			    an email address to alert when a healthcheck
+			    an email address to alert when a health check
 			    fails */
 	char *mail_from; /* SMFWATCHDOG_EMAIL_FROM
 			    who the email originates from, defaults to
@@ -57,6 +70,7 @@ struct {
 /* Function Prototypes */
 void LOG(const char *fmt, ...);
 void loadenvironment();
+int done(int code);
 int execute(const char *cmd, char **output);
 int process();
 int strreplace(char *s, char f, char r);
@@ -68,16 +82,19 @@ int main(int argc, char **argv) {
 	/* get the SMF FMRI */
 	char *FMRI = getenv("SMF_FMRI");
 	if (FMRI == NULL || FMRI[0] == '\0') {
-		printf("%s is not meant to be run interatively\n",
+		printf("%s is not meant to be run interatively\n\n",
 		    PROGNAME);
-		return 1;
+		printf("%s@%s (compiled %s %s)\n",
+		    PROGNAME, VERSION, __DATE__, __TIME__);
+		if (argc > 1) return 0;
+		else return 1;
 	}
 
 	/* check if we are disabled */
 	char *disabled = getenv("SMFWATCHDOG_DISABLED");
 	if (disabled != NULL && disabled[0] != '\0') {
-		LOG("SMFWATCHDOG_DISABLED is set, exiting\n");
-		return 0;
+		LOG("SMFWATCHDOG_DISABLED is set\n");
+		return done(0);
 	}
 
 	LOG("SMF_FMRI=%s\n", FMRI);
@@ -108,33 +125,73 @@ int main(int argc, char **argv) {
 	/* test dir existence by moving into it */
 	if (chdir(dir) != 0) {
 		LOG("chdir(%s): %s\n", dir, strerror(errno));
-		LOG("%s terminating\n", PROGNAME);
-		return 2;
+		return done(2);
 	}
 
 	/* load env options */
 	loadenvironment();
 
+	/* create the restart cmd */
+	char restartcmd[15 + FMRI_LEN + 1];
+	sprintf(restartcmd, "svcadm restart %s", FMRI);
+
+	/* drop privileges */
+	if (options.gid) {
+		if (setgid(options.gid) < 0) {
+			LOG("setgid to %d failed: %s\n",
+			    options.gid, strerror(errno));
+			return done(3);
+		}
+	}
+	if (options.uid) {
+		if (setuid(options.uid) < 0) {
+			LOG("setuid to %d failed: %s\n",
+			    options.uid, strerror(errno));
+			return done(4);
+		}
+	}
+
+
 	/* start the loop */
 	int ret = 0;
-	while (ret == 0) {
+	int loop = 1;
+	while (loop) {
 		DEBUG("sleeping for %d seconds\n", options.sleep);
-
 		sleep(options.sleep);
 
 		DEBUG("tick\n");
 
 		ret = process();
+		if (ret == 0) continue;
+
+		/* If we are here, something failed */
+		switch (options.action) {
+			default:
+				LOG("unknown action\n");
+			case ACT_RAISE_SIGABRT:
+				LOG("raising SIGABRT\n");
+				raise(SIGABRT);
+				break;
+			case ACT_RESTART_SVC:
+				/* "svcadm restart " + FMRI + "\0" */
+				LOG("executing: %s\n", restartcmd);
+				system(restartcmd);
+				break;
+			case ACT_EXIT:
+				loop = 0;
+				break;
+			case ACT_NOTHING:
+				break;
+		}
 	}
 
-	/* we have broken from the loop, restart the service */
-	/* "svcadm restart " + FMRI + "\0" */
-	char cmd[15 + FMRI_LEN + 1];
-	sprintf(cmd, "svcadm restart %s", FMRI);
-	LOG("executing: %s\n", cmd);
-	system(cmd);
+	/* we have broken from the loop, exit */
+	return done(ret);
+}
 
-	return ret;
+int done(int code) {
+	LOG("exiting.\n");
+	return code;
 }
 
 /**
@@ -153,6 +210,21 @@ void loadenvironment() {
 	if (!options.sleep) options.sleep = 60;
 	DEBUG("option: {SMFWATCHDOG_SLEEP} sleep %d seconds\n",
 	    options.sleep);
+
+	p = getenv("SMFWATCHDOG_ACTION");
+	if (p != NULL) options.action = atoi(p);
+	DEBUG("option: {SMFWATCHDOG_ACTION} on failure action %d\n",
+	    options.action);
+
+	p = getenv("SMFWATCHDOG_UID");
+	if (p != NULL) options.uid = atoi(p);
+	DEBUG("option: {SMFWATCHDOG_UID} uid for dropped privileges %d\n",
+	    options.uid);
+
+	p = getenv("SMFWATCHDOG_GID");
+	if (p != NULL) options.gid = atoi(p);
+	DEBUG("option: {SMFWATCHDOG_GID} gid for dropped privileges %d\n",
+	    options.gid);
 
 	options.mail_to = getenv("SMFWATCHDOG_EMAIL");
 	DEBUG("option: {SMFWATCHDOG_EMAIL} email to \"%s\"\n",
@@ -211,7 +283,7 @@ int process() {
 				break;
 			case 126: /* permission denied, consider this a success */
 				break;
-			default: /* healthcheck failed */
+			default: /* health check failed */
 				LOG("%s failed (exit code %d)\n",
 				    dp->d_name, ret);
 
@@ -290,7 +362,7 @@ void LOG(const char *fmt, ...) {
 
 	/* print the progname, version, and timestamp */
 	gettimeofday(&tv, NULL);
-	strftime(date, sizeof(date) / sizeof(char), DATEFMT, gmtime(&tv.tv_sec));
+	strftime(date, sizeof(date) / sizeof(date[0]), DATEFMT, gmtime(&tv.tv_sec));
 	printf("[%s@%s] [%s.%03ldZ] ", PROGNAME, VERSION, date, tv.tv_usec / 1000);
 
 	/* printf like normal */
@@ -355,21 +427,45 @@ int sendmail(const char *check, const char *body) {
 		sprintf(mail, "noreply@%s", hostname);
 	}
 
+	char action[256];
+	/* find out what action will be taken */
+	switch (options.action) {
+		default:
+		case ACT_RAISE_SIGABRT:
+			snprintf(action, sizeof(action) / sizeof(action[0]),
+			    "raising SIGABRT");
+			break;
+		case ACT_RESTART_SVC:
+			snprintf(action, sizeof(action) / sizeof(action[0]),
+			    "restarting service with <code>svcadm restart %s</code>",
+			    FMRI);
+			break;
+		case ACT_EXIT:
+			snprintf(action, sizeof(action) / sizeof(action[0]),
+			    "process exiting");
+			break;
+		case ACT_NOTHING:
+			snprintf(action, sizeof(action) / sizeof(action[0]),
+			    "no action taken");
+			break;
+	}
+
 	/* get the timestamp */
 	char date[20];
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	strftime(date, sizeof(date) / sizeof(char), DATEFMT, gmtime(&tv.tv_sec));
+	strftime(date, sizeof(date) / sizeof(date[0]), DATEFMT, gmtime(&tv.tv_sec));
 
 	fprintf(email, "To: %s\n", options.mail_to);
 	fprintf(email, "From: %s\n",
 	    options.mail_from == NULL ?  mail : options.mail_from);
-	fprintf(email, "Subject: [%s] %s failed healthcheck on %s\n",
+	fprintf(email, "Subject: [%s] %s failed health check on %s\n",
 	    PROGNAME, base, hostname);
 	fprintf(email, "Content-Type: text/html\n");
 	fprintf(email, "\n");
-	fprintf(email, "<code>%s</code> restarted on <code>%s</code><br><br>\n\n",
+	fprintf(email, "<code>%s</code> failed health check on <code>%s</code><br><br>\n\n",
 	    base, hostname);
+	fprintf(email, "%s<br><br>\n\n", action);
 	fprintf(email, "<b>FMRI:</b> <code>%s</code><br>\n", FMRI);
 	fprintf(email, "<b>Hostname:</b> <code>%s</code><br>\n", hostname);
 	fprintf(email, "<b>Time (UTC):</b> <code>%s</code><br>\n", date);
@@ -377,7 +473,7 @@ int sendmail(const char *check, const char *body) {
 	fprintf(email, "<b>Program:</b> <code>%s@%s (compiled %s %s)</code><br><br>\n\n",
 	    PROGNAME, VERSION, __DATE__, __TIME__);
 
-	fprintf(email, "<b>Command Output:</b>\n");
+	fprintf(email, "<b>Command Output</b>\n");
 	fprintf(email, "<pre>%s</pre>\n", body);
 
 	return pclose(email);
