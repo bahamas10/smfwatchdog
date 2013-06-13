@@ -79,15 +79,19 @@ int sendmail(const char *check, const char *body);
 int main(int argc, char **argv) {
 	setbuf(stdout, NULL);
 
+	/* print the version string if run with any arguments */
+	if (argc > 1) {
+		printf("%s@%s (compiled %s %s)\n",
+		    PROGNAME, VERSION, __DATE__, __TIME__);
+		return 0;
+	}
+
 	/* get the SMF FMRI */
 	char *FMRI = getenv("SMF_FMRI");
 	if (FMRI == NULL || FMRI[0] == '\0') {
 		printf("%s is not meant to be run interatively\n\n",
 		    PROGNAME);
-		printf("%s@%s (compiled %s %s)\n",
-		    PROGNAME, VERSION, __DATE__, __TIME__);
-		if (argc > 1) return 0;
-		else return 1;
+		return 1;
 	}
 
 	/* check if we are disabled */
