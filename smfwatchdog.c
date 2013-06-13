@@ -56,6 +56,8 @@ struct {
 			    uid used to drop privileges before looping */
 	int gid;         /* SMFWATCHDOG_GID
 			    gid used to drop privileges before looping */
+	char *command;   /* SMFWATCHDOG_COMMAND
+			    a command to run before any action is taken */
 	char *mail_to;   /* SMFWATCHDOG_EMAIL
 			    an email address to alert when a health check
 			    fails */
@@ -164,6 +166,10 @@ int main(int argc, char **argv) {
 		if (ret == 0) continue;
 
 		/* If we are here, something failed */
+		if (options.command != NULL) {
+			LOG("executing: %s\n", options.command);
+			system(options.command);
+		}
 		switch (options.action) {
 			default:
 				LOG("unknown action\n");
@@ -227,6 +233,10 @@ void loadenvironment() {
 	if (p != NULL) options.gid = atoi(p);
 	DEBUG("option: {SMFWATCHDOG_GID} gid for dropped privileges %d\n",
 	    options.gid);
+
+	options.command = getenv("SMFWATCHDOG_COMMAND");
+	DEBUG("option: {SMFWATCHDOG_COMMAND} command to run \"%s\"\n",
+	    options.command);
 
 	options.mail_to = getenv("SMFWATCHDOG_EMAIL");
 	DEBUG("option: {SMFWATCHDOG_EMAIL} email to \"%s\"\n",
@@ -294,7 +304,7 @@ int process() {
 					    options.mail_to);
 					sendmail(dp->d_name, output);
 				}
-				/* TODO restart service */
+				if (output != NULL) free(output);
 				return ret;
 		}
 		if (output != NULL) free(output);
