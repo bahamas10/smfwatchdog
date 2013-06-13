@@ -255,6 +255,8 @@ added to the SMF manifest.
 - `SMFWATCHDOG_ACTION`: (int) The action (see below) to take during a health
     check failure, defaults to 0 (raise `SIGABRT`)
 - `SMFWATCHDOG_DISABLED`: If set, `smfwatchdog` will exit cleanly upon starting
+- `SMFWATCHDOG_COMMAND`: A command to execute (parsed by a shell) after a failure
+    case but before any action is taken, defaults to nothing
 - `SMFWATCHDOG_UID`: (int) If this is non-zero, `setuid(2)` will be called with
     this variable before any plugins are run to drop privileges
 - `SMFWATCHDOG_GID`: (int) If this is non-zero, `setgid(2)` will be called with

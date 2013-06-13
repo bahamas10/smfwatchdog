@@ -337,6 +337,9 @@ The following options can be passed in as environmental variables, most likely b
 \fBSMFWATCHDOG_DISABLED\fR: If set, \fBsmfwatchdog\fR will exit cleanly upon starting
 .
 .IP "\(bu" 4
+\fBSMFWATCHDOG_COMMAND\fR: A command to execute (parsed by a shell) after a failure case but before any action is taken, defaults to nothing
+.
+.IP "\(bu" 4
 \fBSMFWATCHDOG_UID\fR: (int) If this is non\-zero, \fBsetuid(2)\fR will be called with this variable before any plugins are run to drop privileges
 .
 .IP "\(bu" 4
