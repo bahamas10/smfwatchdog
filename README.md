@@ -7,6 +7,7 @@ A health checking daemon to be used with SMF services.
 - [Installation](#installation)
 - [Example](#example)
 - [Options](#options)
+- [Usage](#usage)
 - [Notes](#notes)
 - [License (MIT)](#license)
 
@@ -295,10 +296,32 @@ Setting this variable to 3 will cause `smfwatchdog` to not take any action
 except to log and optionally send an email in the event of a failed
 health check, making it a good option for testing.
 
+<a name="usage" />
+
+Usage
+-----
+
+If you run `smfwatchdog` interactively (without `SMF_FMRI` set) you are greeted
+with
+
+    $ smfwatchdog
+    smfwatchdog is not meant to be run interatively
+
+as the daemon would have nothing to check.
+
+If `smfwatchdog` is run with any number of arguments, the version string is printed
+and the process exits cleanly.
+
+    $ smfwatchdog -v
+    smfwatchdog@0.0.2 (compiled Jun 13 2013 09:09:46)
+
+The proper way to run `smfwatchdog` is to add it to the exec line of an SMF manifest,
+and let SMF start and stop the daemon.
+
 <a name="notes" />
 
-Notes / Issues
---------------
+Notes
+-----
 
 The watchdog isn't a solution to a problem; it doesn't fix bugs. The health
 checks are meant to minimize the impact of bugs that exist that currently have

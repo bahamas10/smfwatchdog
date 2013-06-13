@@ -22,6 +22,9 @@ A health checking daemon to be used with SMF services\.
 \fIOptions\fR
 .
 .IP "\(bu" 4
+\fIUsage\fR
+.
+.IP "\(bu" 4
 \fINotes\fR
 .
 .IP "\(bu" 4
@@ -384,7 +387,44 @@ Setting this variable to 3 will cause \fBsmfwatchdog\fR to not take any action e
 .P
  \fI\fR
 .
-.SH "Notes / Issues"
+.SH "Usage"
+If you run \fBsmfwatchdog\fR interactively (without \fBSMF_FMRI\fR set) you are greeted with
+.
+.IP "" 4
+.
+.nf
+
+$ smfwatchdog
+smfwatchdog is not meant to be run interatively
+.
+.fi
+.
+.IP "" 0
+.
+.P
+as the daemon would have nothing to check\.
+.
+.P
+If \fBsmfwatchdog\fR is run with any number of arguments, the version string is printed and the process exits cleanly\.
+.
+.IP "" 4
+.
+.nf
+
+$ smfwatchdog \-v
+smfwatchdog@0\.0\.2 (compiled Jun 13 2013 09:09:46)
+.
+.fi
+.
+.IP "" 0
+.
+.P
+The proper way to run \fBsmfwatchdog\fR is to add it to the exec line of an SMF manifest, and let SMF start and stop the daemon\.
+.
+.P
+ \fI\fR
+.
+.SH "Notes"
 The watchdog isn\'t a solution to a problem; it doesn\'t fix bugs\. The health checks are meant to minimize the impact of bugs that exist that currently have not been fixed in a service\.
 .
 .IP "\(bu" 4
