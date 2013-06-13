@@ -465,8 +465,8 @@ int sendmail(const char *check, const char *body) {
 	fprintf(email, "\n");
 	fprintf(email, "<code>%s</code> failed health check on <code>%s</code><br><br>\n\n",
 	    base, hostname);
-	fprintf(email, "%s<br><br>\n\n", action);
 	fprintf(email, "<b>FMRI:</b> <code>%s</code><br>\n", FMRI);
+	fprintf(email, "<b>Action:</b> <code>%s</code><br>\n", action);
 	fprintf(email, "<b>Hostname:</b> <code>%s</code><br>\n", hostname);
 	fprintf(email, "<b>Time (UTC):</b> <code>%s</code><br>\n", date);
 	fprintf(email, "<b>Command:</b> <code>%s</code><br>\n", check);

@@ -227,9 +227,10 @@ that looks like:
     From: noreply@dave-01.local
     Subject: [smfwatchdog] daves-service:default failed health check on dave-01.local
 
-    daves-service:default restarted on dave-01.local
+    daves-service:default failed health check on dave-01.local
 
     FMRI: svc:/application/daves-service:default
+    Action: raising SIGABRT
     Hostname: dave-01.local
     Time (UTC): 2013-06-12T04:38:13
     Command: check.sh
