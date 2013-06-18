@@ -9,6 +9,7 @@ A health checking daemon to be used with SMF services.
 - [Options](#options)
 - [Usage](#usage)
 - [Notes](#notes)
+- [Todo](#todo)
 - [License (MIT)](#license)
 
 <a name="synopsis" />
@@ -334,6 +335,14 @@ not been fixed in a service.
 Ensure that you don't name your scripts `$(rm -rf /)` or something
 - Don't set `SMFWATCHDOG_UID` or `SMFWATCHDOG_GID` if the manifest itself
 takes care of dropping privileges
+
+<a name="todo" />
+
+Todo
+----
+
+- `smfwatchdog` should kill itself when it is the only process running in a contract
+- `pclose` raises `SIGABRT` when executing a broken symlink.
 
 <a name="license" />
 

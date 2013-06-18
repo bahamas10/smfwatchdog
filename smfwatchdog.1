@@ -28,6 +28,9 @@ A health checking daemon to be used with SMF services\.
 \fINotes\fR
 .
 .IP "\(bu" 4
+\fITodo\fR
+.
+.IP "\(bu" 4
 \fILicense (MIT)\fR
 .
 .IP "" 0
@@ -438,6 +441,19 @@ Scripts are executed with \fBpopen(3C)\fR, and as such, have their names parsed 
 .
 .IP "\(bu" 4
 Don\'t set \fBSMFWATCHDOG_UID\fR or \fBSMFWATCHDOG_GID\fR if the manifest itself takes care of dropping privileges
+.
+.IP "" 0
+.
+.P
+ \fI\fR
+.
+.SH "Todo"
+.
+.IP "\(bu" 4
+\fBsmfwatchdog\fR should kill itself when it is the only process running in a contract
+.
+.IP "\(bu" 4
+\fBpclose\fR raises \fBSIGABRT\fR when executing a broken symlink\.
 .
 .IP "" 0
 .
