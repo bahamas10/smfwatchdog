@@ -25,7 +25,7 @@
 #include <unistd.h>
 
 #define PROGNAME           "smfwatchdog"
-#define VERSION            "0.0.4"
+#define VERSION            "0.0.5"
 
 #define DATEFMT            "%Y-%m-%dT%H:%M:%S"
 #define DEFAULT_MAIL_PROG  "mailx -t"
