@@ -334,18 +334,24 @@ int execute(const char *cmd, char **output) {
 	char buf[BUFSIZ]; /* output buffer */
 	int bytes = 0; /* bytes read */
 	int outputsize = 1; /* output buffer size (+1 for nul byte) */
-	char *out = malloc(sizeof(char) * outputsize); /* all cmd output */
+	char *out = malloc(sizeof(*out) * outputsize); /* all cmd output */
 	if (out == NULL) {
 		LOG("malloc: %s\n", strerror(errno));
 		return -1;
 	}
-	*output = out;
 	out[0] = '\0';
 
 	/* save all of the cmd output */
-	while ((bytes = fread(buf, sizeof(char), BUFSIZ, fp)) > 0) {
+	while ((bytes = fread(buf, sizeof(*buf), sizeof(buf) / sizeof(*buf), fp)) > 0) {
 		outputsize += bytes;
-		realloc(out, outputsize);
+		char *tmp = realloc(out, outputsize);
+		if (tmp == NULL) {
+			LOG("realloc: %s\n", strerror(errno));
+			free(out);
+			out = NULL;
+			return -1;
+		}
+		out = tmp;
 		strncat(out, buf, bytes);
 		out[outputsize - 1] = '\0';
 	}
@@ -357,6 +363,7 @@ int execute(const char *cmd, char **output) {
 		return -1;
 	}
 
+	*output = out;
 	return pclose(fp);
 }
 
