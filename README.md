@@ -330,6 +330,11 @@ The watchdog isn't a solution to a problem; it doesn't fix bugs. The health
 checks are meant to minimize the impact of bugs that exist that currently have
 not been fixed in a service.
 
+- If `smfwatchdog` is the only process running in its contract, it will exit
+with an error code to let SMF run its course
+
+### Concerns
+
 - This software hasn't been fully tested, and may contain bugs
 - Scripts are executed with `popen(3C)`, and as such, have their names parsed by the shell.
 Ensure that you don't name your scripts `$(rm -rf /)` or something
@@ -341,7 +346,6 @@ takes care of dropping privileges
 Todo
 ----
 
-- `smfwatchdog` should kill itself when it is the only process running in a contract
 - `pclose` raises `SIGABRT` when executing a broken symlink.
 
 <a name="license" />

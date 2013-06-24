@@ -434,6 +434,13 @@ The proper way to run \fBsmfwatchdog\fR is to add it to the exec line of an SMF 
 The watchdog isn\'t a solution to a problem; it doesn\'t fix bugs\. The health checks are meant to minimize the impact of bugs that exist that currently have not been fixed in a service\.
 .
 .IP "\(bu" 4
+If \fBsmfwatchdog\fR is the only process running in its contract, it will exit with an error code to let SMF run its course
+.
+.IP "" 0
+.
+.SS "Concerns"
+.
+.IP "\(bu" 4
 This software hasn\'t been fully tested, and may contain bugs
 .
 .IP "\(bu" 4
@@ -448,9 +455,6 @@ Don\'t set \fBSMFWATCHDOG_UID\fR or \fBSMFWATCHDOG_GID\fR if the manifest itself
  \fI\fR
 .
 .SH "Todo"
-.
-.IP "\(bu" 4
-\fBsmfwatchdog\fR should kill itself when it is the only process running in a contract
 .
 .IP "\(bu" 4
 \fBpclose\fR raises \fBSIGABRT\fR when executing a broken symlink\.
