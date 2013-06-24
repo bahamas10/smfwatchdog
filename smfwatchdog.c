@@ -55,6 +55,8 @@ struct {
 	                    time to sleep between looping all the checks */
 	int action;      /* SMFWATCHDOG_ACTION
 			    the action to take when there is a failure */
+	int no_contract; /* SMFWATCHDOG_IGNORE_CONTRACT
+			    if set, the contract will not be looked up */
 	int uid;         /* SMFWATCHDOG_UID
 			    uid used to drop privileges before looping */
 	int gid;         /* SMFWATCHDOG_GID
@@ -162,7 +164,8 @@ int main(int argc, char **argv) {
 	int contractid = contract_id_by_pid(getpid());
 	if (contractid < 0) {
 		LOG("failed to get contract id: %s\n", strerror(errno));
-		return done(5);
+		if (!options.no_contract)
+			return done(5);
 	}
 	LOG("contract id: %d\n", contractid);
 
@@ -177,11 +180,13 @@ int main(int argc, char **argv) {
 		DEBUG("waking up from sleep\n");
 
 		/* check to make sure we aren't the only process in the contract */
-		numpids = num_pids_in_contract(contractid);
-		DEBUG("%d pids in this contract\n", numpids);
-		if (numpids == 1) {
-			LOG("we are the last process running in this contract");
-			return done(6);
+		if (!options.no_contract) {
+			numpids = num_pids_in_contract(contractid);
+			DEBUG("pids found in this contract: %d\n", numpids);
+			if (numpids == 1) {
+				LOG("last process running in this contract, exiting\n");
+				return done(6);
+			}
 		}
 
 		/* loop the directories */
@@ -246,6 +251,11 @@ void loadenvironment() {
 	if (p != NULL) options.action = atoi(p);
 	DEBUG("option: {SMFWATCHDOG_ACTION} on failure action %d\n",
 	    options.action);
+
+	p = getenv("SMFWATCHDOG_IGNORE_CONTRACT");
+	if (p != NULL) options.no_contract = atoi(p);
+	DEBUG("option: {SMFWATCHDOG_IGNORE_CONTRACT} ignore contract %d\n",
+	    options.no_contract);
 
 	p = getenv("SMFWATCHDOG_UID");
 	if (p != NULL) options.uid = atoi(p);

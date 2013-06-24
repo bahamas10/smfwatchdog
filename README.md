@@ -255,6 +255,8 @@ added to the SMF manifest.
     health check scripts, defaults to 60
 - `SMFWATCHDOG_ACTION`: (int) The action (see below) to take during a health
     check failure, defaults to 0 (raise `SIGABRT`)
+- `SMFWATCHDOG_IGNORE_CONTRACT`: (int) If this is non-zero, `smfwatchdog` will not
+    exit if it is the only process running in its contract
 - `SMFWATCHDOG_UID`: (int) If this is non-zero, `setuid(2)` will be called with
     this variable before any plugins are run to drop privileges
 - `SMFWATCHDOG_GID`: (int) If this is non-zero, `setgid(2)` will be called with

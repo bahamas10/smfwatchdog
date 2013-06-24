@@ -337,6 +337,9 @@ The following options can be passed in as environmental variables, most likely b
 \fBSMFWATCHDOG_ACTION\fR: (int) The action (see below) to take during a health check failure, defaults to 0 (raise \fBSIGABRT\fR)
 .
 .IP "\(bu" 4
+\fBSMFWATCHDOG_IGNORE_CONTRACT\fR: (int) If this is non\-zero, \fBsmfwatchdog\fR will not exit if it is the only process running in its contract
+.
+.IP "\(bu" 4
 \fBSMFWATCHDOG_UID\fR: (int) If this is non\-zero, \fBsetuid(2)\fR will be called with this variable before any plugins are run to drop privileges
 .
 .IP "\(bu" 4
