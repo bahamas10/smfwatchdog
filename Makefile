@@ -1,7 +1,7 @@
 NAME    = SMF Watchdog
 DOC     = smfwatchdog.1
 PREFIX ?= /opt/local
-CFLAGS  = -Wall
+CFLAGS  = -Wall -lcontract
 SRC     = $(wildcard *.c)
 BIN     = $(patsubst %.c,%,$(SRC))
 

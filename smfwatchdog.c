@@ -11,8 +11,11 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <libcontract.h>
 #include <libgen.h>
 #include <netdb.h>
+#include <procfs.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -77,6 +80,8 @@ int execute(const char *cmd, char **output);
 int process();
 int strreplace(char *s, char f, char r);
 int sendmail(const char *check, const char *body);
+int contract_id_by_pid(pid_t pid);
+int num_pids_in_contract(int contractid);
 
 int main(int argc, char **argv) {
 	setbuf(stdout, NULL);
@@ -153,15 +158,33 @@ int main(int argc, char **argv) {
 		return done(4);
 	}
 
+	/* get the contract id of this process */
+	int contractid = contract_id_by_pid(getpid());
+	if (contractid < 0) {
+		LOG("failed to get contract id: %s\n", strerror(errno));
+		return done(5);
+	}
+	LOG("contract id: %d\n", contractid);
+
 	/* start the loop */
 	int ret = 0;
 	int loop = 1;
+	int numpids = 0;
 	while (loop) {
 		DEBUG("sleeping for %d seconds\n", options.sleep);
 		sleep(options.sleep);
 
-		DEBUG("tick\n");
+		DEBUG("waking up from sleep\n");
 
+		/* check to make sure we aren't the only process in the contract */
+		numpids = num_pids_in_contract(contractid);
+		DEBUG("%d pids in this contract\n", numpids);
+		if (numpids == 1) {
+			LOG("we are the last process running in this contract");
+			return done(6);
+		}
+
+		/* loop the directories */
 		ret = process();
 		if (ret == 0) continue;
 
@@ -496,4 +519,76 @@ int sendmail(const char *check, const char *body) {
 	fprintf(email, "<pre>%s</pre>\n", body);
 
 	return pclose(email);
+}
+
+/**
+ * get the contract id of a given pid
+ *
+ * @param pid {pid_t} pid to check
+ *
+ * @returns the contract id, or a negative number
+ * with errno set on failure
+ */
+int contract_id_by_pid(pid_t pid) {
+	if (!pid) pid = getpid();
+
+	struct psinfo info; /* psinfo struct for the process */
+	char psinfo_file[256]; /* /proc/<pid>/psinfo */
+	int fd; /* reusable fd */
+
+	snprintf(psinfo_file,
+		sizeof(psinfo_file) / sizeof(*psinfo_file),
+		"/proc/%d/psinfo",
+		(int)pid);
+
+	/* read psinfo and load the struct*/
+	fd = open(psinfo_file, O_RDONLY);
+	if (fd < 0)
+		return -1;
+	if (read(fd, &info, sizeof(info)) != sizeof(info)) {
+		close(fd);
+		return -2;
+	}
+	close(fd);
+
+	/* the processes contract id */
+	return (int)info.pr_contract;
+}
+
+/**
+ * Checks how many pid's exist in a given contract
+ *
+ * @param contractid {int} the contract ID to check
+ *
+ * @returns the number of pids in a contract, or a negative number
+ * with errno set on failure
+ */
+int num_pids_in_contract(int contractid) {
+	char contract_file[256]; /* /system/contract/all/<ctid>/status */
+	int fd; /* reusable fd */
+
+	/* a contract stat handle */
+	ct_stathdl_t stathdl;
+
+	snprintf(contract_file,
+		sizeof(contract_file) / sizeof(*contract_file),
+		"/system/contract/all/%d/status",
+		contractid);
+	fd = open(contract_file, O_RDONLY | O_LARGEFILE);
+	if (fd < 0)
+		return -3;
+	if (ct_status_read(fd, CTD_ALL, &stathdl) != 0) {
+		close(fd);
+		return -4;
+	}
+	close(fd);
+
+	pid_t *members;
+	uint_t numpids;
+	int err = 0;
+	if ((err = ct_pr_status_get_members(stathdl, &members, &numpids)))
+		return -5;
+	ct_status_free(stathdl);
+
+	return numpids;
 }
