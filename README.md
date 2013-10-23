@@ -122,10 +122,8 @@ This is where `smfwatchdog` can be used to detect and mitigate this issue.
 
 Modify the `exec` line in the manifest to look like this:
 
-``` diff
-< <exec_method type="method" name="start" exec="node /home/dave/daves-service/server.js &amp;" timeout_seconds="10" />
----
-> <exec_method type="method" name="start" exec="smfwatchdog &amp; node /home/dave/daves-service/server.js &amp;" timeout_seconds="10" />
+``` xml
+<exec_method type="method" name="start" exec="smfwatchdog &amp; node /home/dave/daves-service/server.js &amp;" timeout_seconds="10" />
 ```
 
 This instructs the service to start an instance of `smfwatchdog` with the node
