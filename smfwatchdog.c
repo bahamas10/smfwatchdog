@@ -326,8 +326,6 @@ int process() {
 				DEBUG("%s executed succesfully\n",
 				    dp->d_name);
 				break;
-			case 126: /* permission denied, consider this a success */
-				break;
 			default: /* health check failed */
 				LOG("%s failed (exit code %d)\n",
 				    dp->d_name, ret);
