@@ -336,6 +336,7 @@ int process() {
 					sendmail(dp->d_name, output);
 				}
 				if (output != NULL) free(output);
+				closedir(d);
 				return ret;
 		}
 		if (output != NULL) free(output);
