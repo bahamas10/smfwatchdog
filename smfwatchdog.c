@@ -34,6 +34,7 @@
 #define DEFAULT_MAIL_PROG  "mailx -t"
 #define MAX_FMRI_LEN       scf_limit(SCF_LIMIT_MAX_FMRI_LENGTH)
 #define WATCHDOG_DIR       "/opt/local/share/smf/smfwatchdog"
+#define DISABLE_FILE       "DISABLE"
 
 /* Action to take on failure, set by SMFWATCHDOG_ACTION */
 #define ACT_RAISE_SIGABRT  0   /* kill ourself with SIGABRT */
@@ -290,6 +291,12 @@ void loadenvironment() {
  * loop over all files in the current directory and execute them
  */
 int process() {
+	struct stat statbuf;
+	if (stat(DISABLE_FILE, &statbuf) == 0) {
+		LOG("file \"%s\" found, going back to sleep\n", DISABLE_FILE);
+		return 0;
+	}
+
 	struct dirent *dp; /* dir pointer */
 	DIR *d = opendir(".");
 
