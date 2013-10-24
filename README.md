@@ -332,6 +332,8 @@ not been fixed in a service.
 
 - If `smfwatchdog` is the only process running in its contract, it will exit
 with an error code to let SMF run its course
+- If a file named `DISABLE` is found in a services checks directory, `smfwatchdog`
+will go back to sleep without running any checks
 
 ### Concerns
 

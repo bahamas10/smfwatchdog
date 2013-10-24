@@ -190,6 +190,16 @@ int main(int argc, char **argv) {
 			}
 		}
 
+		/* check if the disable file exists */
+		struct stat statbuf;
+		if (stat(DISABLE_FILE, &statbuf) == 0) {
+			LOG("file \"%s\" found, going back to sleep\n", DISABLE_FILE);
+			continue;
+		} else if (errno != ENOENT) {
+			LOG("error stat(2) \"%s\": %s\n", DISABLE_FILE, strerror(errno));
+			return done(7);
+		}
+
 		/* loop the directories */
 		ret = process();
 		if (ret == 0) continue;
@@ -291,12 +301,6 @@ void loadenvironment() {
  * loop over all files in the current directory and execute them
  */
 int process() {
-	struct stat statbuf;
-	if (stat(DISABLE_FILE, &statbuf) == 0) {
-		LOG("file \"%s\" found, going back to sleep\n", DISABLE_FILE);
-		return 0;
-	}
-
 	struct dirent *dp; /* dir pointer */
 	DIR *d = opendir(".");
 
