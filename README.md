@@ -22,10 +22,10 @@ systems. It ensures that services, which may consist of 0 to many
 processes, are up and running, and handles any failures they may
 encounter.
 
-The one thing that SMF is lacking however, is the ability to do service level
+One thing that SMF is lacking however (by design), is the ability to do service level
 health checks.  SMF bases your services health on process health, checking
 things such as processes dying, or exiting abnormally, etc. However, it may be
-the case that a process is up, has a pid and `/proc` structure, but has
+the case that a process is up, has a pid and `proc` structure, but has
 locked up, or is not behaving how it should.  `smfwatchdog` is meant
 to do health checks (in the form of scripts) on your services, and proactively
 kill or restart the service under failure conditions.
@@ -34,7 +34,7 @@ The health check daemon is meant to run as a separate instance for each
 service you would like to monitor.  For example, an instance of `smfwatchdog`
 would be running under the `nginx` service, while a different instance of
 `smfwatchdog` would be running under the `apache` service.  The watchdog
-instance would only be responsible for checking the service under which it
+instance is only responsible for checking the service under which it
 is running.
 
 You can learn more about SMF by reading [smf(5)](http://illumos.org/man/5/smf).
