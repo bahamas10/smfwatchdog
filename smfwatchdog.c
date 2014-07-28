@@ -1,5 +1,5 @@
 /**
- * SMF Watch Dog
+ * SMF Watchdog
  *
  * A health checking daemon to be used with an
  * SMF service.
@@ -47,6 +47,12 @@
 	do { \
 		if (options.debug) LOG(__VA_ARGS__); \
 	} while (0)
+/* Shortcut to die */
+#define DIE(code, ...) \
+	do { \
+		LOG(__VA_ARGS__); \
+		exit(code); \
+	} while (0)
 
 /* Environmental Options */
 struct {
@@ -78,7 +84,6 @@ struct {
 /* Function Prototypes */
 void LOG(const char *fmt, ...);
 void loadenvironment();
-int done(int code);
 int execute(const char *cmd, char **output);
 int process();
 int strreplace(char *s, char f, char r);
@@ -99,17 +104,15 @@ int main(int argc, char **argv) {
 	/* get the SMF FMRI */
 	char *FMRI = getenv("SMF_FMRI");
 	if (FMRI == NULL || FMRI[0] == '\0') {
-		printf("%s is not meant to be run interatively\n\n",
+		printf("%s is not meant to be run interatively\n",
 		    PROGNAME);
 		return 1;
 	}
 
 	/* check if we are disabled */
 	char *disabled = getenv("SMFWATCHDOG_DISABLED");
-	if (disabled != NULL && disabled[0] != '\0') {
-		LOG("SMFWATCHDOG_DISABLED is set\n");
-		return done(0);
-	}
+	if (disabled != NULL && disabled[0] != '\0')
+		DIE(0, "SMFWATCHDOG_DISABLED is set\n");
 
 	LOG("SMF_FMRI=%s\n", FMRI);
 
@@ -122,9 +125,9 @@ int main(int argc, char **argv) {
 
 	/* copy the FMRI and remove the svc:/ prefix */
 	strcpy(name, FMRI);
-	if (strncmp(name, "svc:/", 5) == 0) {
+	if (strncmp(name, "svc:/", 5) == 0)
 		name += 5;
-	}
+
 	/* replace / with - */
 	strreplace(name, '/', '-');
 
@@ -137,10 +140,8 @@ int main(int argc, char **argv) {
 	mkdir(dir, 0755);
 
 	/* test dir existence by moving into it */
-	if (chdir(dir) != 0) {
-		LOG("chdir(%s): %s\n", dir, strerror(errno));
-		return done(2);
-	}
+	if (chdir(dir) != 0)
+		DIE(2, "chdir(%s): %s\n", dir, strerror(errno));
 
 	/* load env options */
 	loadenvironment();
@@ -150,23 +151,20 @@ int main(int argc, char **argv) {
 	sprintf(restartcmd, "svcadm restart %s", FMRI);
 
 	/* drop privileges */
-	if (options.gid && setgid(options.gid) < 0) {
-		LOG("setgid to %d failed: %s\n",
+	if (options.gid && setgid(options.gid) < 0)
+		DIE(3, "setgid to %d failed: %s\n",
 		    options.gid, strerror(errno));
-		return done(3);
-	}
-	if (options.uid && setuid(options.uid) < 0) {
-		LOG("setuid to %d failed: %s\n",
+
+	if (options.uid && setuid(options.uid) < 0)
+		DIE(4, "setuid to %d failed: %s\n",
 		    options.uid, strerror(errno));
-		return done(4);
-	}
 
 	/* get the contract id of this process */
 	int contractid = contract_id_by_pid(getpid());
 	if (contractid < 0) {
 		LOG("failed to get contract id: %s\n", strerror(errno));
 		if (!options.no_contract)
-			return done(5);
+			exit(5);
 	}
 	LOG("contract id: %d\n", contractid);
 
@@ -184,10 +182,8 @@ int main(int argc, char **argv) {
 		if (!options.no_contract) {
 			numpids = num_pids_in_contract(contractid);
 			DEBUG("pids found in this contract: %d\n", numpids);
-			if (numpids == 1) {
-				LOG("last process running in this contract, exiting\n");
-				return done(6);
-			}
+			if (numpids == 1)
+				DIE(6, "last process running in this contract, exiting\n");
 		}
 
 		/* check if the disable file exists */
@@ -196,13 +192,13 @@ int main(int argc, char **argv) {
 			LOG("file \"%s\" found, going back to sleep\n", DISABLE_FILE);
 			continue;
 		} else if (errno != ENOENT) {
-			LOG("error stat(2) \"%s\": %s\n", DISABLE_FILE, strerror(errno));
-			return done(7);
+			DIE(7, "error stat(2) \"%s\": %s\n", DISABLE_FILE, strerror(errno));
 		}
 
 		/* loop the directories */
 		ret = process();
-		if (ret == 0) continue;
+		if (ret == 0)
+			continue;
 
 		/* If we are here, something failed */
 		if (options.command != NULL) {
@@ -230,15 +226,8 @@ int main(int argc, char **argv) {
 	}
 
 	/* we have broken from the loop, exit */
-	return done(ret);
-}
-
-/**
- * print "exiting." and return the code you give it
- */
-int done(int code) {
-	LOG("exiting.\n");
-	return code;
+	LOG("exiting\n");
+	return ret;
 }
 
 /**
