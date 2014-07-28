@@ -117,7 +117,7 @@ function onrequest(req, res) {
 
 This webserver has a bug however, on the 5th request and thereafter, all
 requests will stall, and the server will lock up.  SMF by itself won't be able
-to detect this problem, as the process is up and has a valid `/proc` structure.
+to detect this problem, as the process is up and has a valid `proc` structure.
 This is where `smfwatchdog` can be used to detect and mitigate this issue.
 
 Modify the `exec` line in the manifest to look like this:
