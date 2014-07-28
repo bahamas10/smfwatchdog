@@ -539,11 +539,11 @@ int sendmail(const char *check, const char *body) {
  * with errno set on failure
  */
 int contract_id_by_pid(pid_t pid) {
-	if (!pid) pid = getpid();
+	if (!pid)
+		pid = getpid();
 
 	struct psinfo info; /* psinfo struct for the process */
 	char psinfo_file[256]; /* /proc/<pid>/psinfo */
-	int fd; /* reusable fd */
 
 	snprintf(psinfo_file,
 		sizeof(psinfo_file) / sizeof(*psinfo_file),
@@ -551,7 +551,7 @@ int contract_id_by_pid(pid_t pid) {
 		(int)pid);
 
 	/* read psinfo and load the struct*/
-	fd = open(psinfo_file, O_RDONLY);
+	int fd = open(psinfo_file, O_RDONLY);
 	if (fd < 0)
 		return -1;
 	if (read(fd, &info, sizeof(info)) != sizeof(info)) {
@@ -574,16 +574,13 @@ int contract_id_by_pid(pid_t pid) {
  */
 int num_pids_in_contract(int contractid) {
 	char contract_file[256]; /* /system/contract/all/<ctid>/status */
-	int fd; /* reusable fd */
-
-	/* a contract stat handle */
-	ct_stathdl_t stathdl;
+	ct_stathdl_t stathdl; /* contract stat handle */
 
 	snprintf(contract_file,
 		sizeof(contract_file) / sizeof(*contract_file),
 		"/system/contract/all/%d/status",
 		contractid);
-	fd = open(contract_file, O_RDONLY | O_LARGEFILE);
+	int fd = open(contract_file, O_RDONLY | O_LARGEFILE);
 	if (fd < 0)
 		return -3;
 	if (ct_status_read(fd, CTD_ALL, &stathdl) != 0) {
